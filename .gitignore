@@ -1,0 +1,5 @@
+.DS_Store
+__pycache__/
+*.pyc
+# runtime data written by the skill when this repo itself is the project
+.party/
