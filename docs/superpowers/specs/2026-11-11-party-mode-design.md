@@ -146,9 +146,9 @@ This is how a project adds its own personas, re-tunes a room, or turns memory on
 2. **Welcome.** Show the cast (icon, name, one-line role) and mention that other rooms exist. Ask for the topic
    unless it was given at launch.
 3. **Spawn guests.** One `party-guest` subagent per persona in the room.
-   - Where the harness keeps agents alive across turns (Copilot CLI background agents + follow-up messages),
-     the cast is **standing**: reuse the same agent for that persona all session.
-   - Otherwise (e.g. Claude Code one-shot subagents), spawn fresh each round with the full brief and transcript.
+   - The cast is **standing**: reuse the same agent for that persona all session (Copilot CLI: background agent
+     + follow-up messages; Claude Code: resume the subagent / `SendMessage`).
+   - Only if the harness cannot continue a subagent, spawn fresh each round with the full brief and transcript.
 4. **Brief per guest:** the persona entry, the room scene, the topic, the **whole room transcript so far** (every
    guest hears everything, including rounds it sat out), and the form constraints: 1–3 sentences unless the user
    asked for depth, react to what was just said, stay in character, speak the user's language, read files or
@@ -240,8 +240,11 @@ Whether `.party/` is committed is the project's choice (README suggests adding `
 - Sandbox: after adding the plugin line, `make test` stays green and a fresh volume lists `party-mode` in
   `copilot plugin list`.
 
-## Open points for the implementation plan
+## Resolved during planning
 
-- Exact Copilot CLI / Claude Code frontmatter keys for agent tool restrictions (verify against current docs;
-  `research-toolkit` agents are the local reference).
-- Whether Claude Code supports follow-up messages to a running subagent; if yes, use the standing cast there too.
+- Agent tool restriction: `tools: Read, Grep, Glob, WebSearch, WebFetch` works in both harnesses — Claude Code
+  uses these names natively; Copilot CLI maps them to its `read`, `search` and `web` aliases and ignores unknown
+  names.
+- Standing cast: both harnesses can continue a running subagent — Copilot CLI via background agents and follow-up
+  messages, Claude Code by resuming a custom subagent (`SendMessage`). Fresh-per-round spawning is only the
+  fallback.
