@@ -124,5 +124,24 @@ expect_err "field set twice" "$(mutant twice $P '- friction: none' $'- friction:
 expect_err "self friction" "$(mutant selffriction $P '- friction: none' '- friction: gamma')" "lists itself in friction"
 expect_err "wrong skill name" "$(mutant skillname skills/party-mode/SKILL.md 'name: party-mode' 'name: party')" "frontmatter name must be 'party-mode'"
 
+# An override room with an existing code replaces the base room (override wins)
+mkdir -p "$tmp/party-room-replace"
+cat > "$tmp/party-room-replace/rooms.md" <<'MD'
+## round-table
+- name: Round Table
+- members: alpha, beta
+- memory: false
+- scene: Smaller.
+MD
+expect_err "override replaces existing room" "$fixture" "room 'round-table' needs 3-5 members, has 2" --party-dir "$tmp/party-room-replace"
+
+# Member count uses distinct members only
+expect_err "distinct member count" "$(mutant distinctcount $R '- members: alpha, beta, gamma' '- members: alpha, alpha, beta')" "needs 3-5 members, has 2"
+
+# Frontmatter name checks
+expect_err "empty quoted skill name" "$(mutant emptyname skills/party-mode/SKILL.md 'name: party-mode' 'name: ""')" "missing frontmatter 'name'"
+expect_ok  "quoted agent name" "$(mutant quotedagent agents/party-guest.md 'name: party-guest' "name: 'party-guest'")"
+expect_err "wrong agent name" "$(mutant agentname agents/party-guest.md 'name: party-guest' 'name: guest')" "frontmatter name must be 'party-guest'"
+
 echo "--- $pass passed, $fail failed ---"
 [ "$fail" -eq 0 ]
