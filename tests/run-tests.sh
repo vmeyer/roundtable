@@ -94,6 +94,35 @@ cat > "$tmp/party-bad/personas.md" <<'MD'
 MD
 expect_ok  "valid project overrides" "$fixture" --party-dir "$tmp/party-ok"
 expect_err "incomplete override persona" "$fixture" "'delta' missing field 'icon'" --party-dir "$tmp/party-bad"
+expect_err "missing party dir" "$fixture" "party dir" --party-dir "$tmp/does-not-exist"
+expect_err "duplicate room member" "$(mutant dupmember $R '- members: alpha, beta, gamma' '- members: alpha, alpha, beta')" "lists member 'alpha' twice"
+
+# Override entries replace the base entry completely (no field merging)
+mkdir -p "$tmp/party-replace" "$tmp/party-badroom"
+cat > "$tmp/party-replace/personas.md" <<'MD'
+## alpha
+- name: A
+MD
+cat > "$tmp/party-badroom/rooms.md" <<'MD'
+## bad-room
+- name: Bad Room
+- members: alpha, beta, nobody
+- memory: false
+- scene: A room with a stranger.
+MD
+expect_err "override persona replaces base" "$fixture" "'alpha' missing field 'icon'" --party-dir "$tmp/party-replace"
+expect_err "override room unknown member" "$fixture" "room 'bad-room' has unknown member 'nobody'" --party-dir "$tmp/party-badroom"
+
+# Manifest robustness: wrong JSON types must yield errors, not tracebacks
+expect_err "non-string version" "$(mutant version .claude-plugin/plugin.json '"version": "0.1.0"' '"version": 1')" "version must be a string"
+expect_err "author not an object" "$(mutant author .claude-plugin/plugin.json '"author": {"name": "Fixture"}' '"author": "Fixture"')" "missing key 'author.name'"
+expect_err "manifest not an object" "$(mutant notobject .claude-plugin/plugin.json '"0.1.0"' '"0.1.0"' >/dev/null && printf '[]' > "$tmp/notobject/.claude-plugin/plugin.json" && printf '%s' "$tmp/notobject")" "manifest must be a JSON object"
+
+# Persona friction and field checks
+expect_ok  "friction reason with comma" "$(mutant frictioncomma $P '- friction: beta (speed vs. safety)' '- friction: beta (speed, not safety)')"
+expect_err "field set twice" "$(mutant twice $P '- friction: none' $'- friction: none\n- friction: alpha')" "sets field 'friction' twice"
+expect_err "self friction" "$(mutant selffriction $P '- friction: none' '- friction: gamma')" "lists itself in friction"
+expect_err "wrong skill name" "$(mutant skillname skills/party-mode/SKILL.md 'name: party-mode' 'name: party')" "frontmatter name must be 'party-mode'"
 
 echo "--- $pass passed, $fail failed ---"
 [ "$fail" -eq 0 ]

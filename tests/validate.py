@@ -34,7 +34,11 @@ def parse_entries(path, errors):
                 continue
             match = FIELD_RE.match(line)
             if match and current is not None:
-                entries[current][match.group(1)] = match.group(2).strip()
+                field = match.group(1)
+                if field in entries[current]:
+                    errors.append("%s:%d: '%s' sets field '%s' twice"
+                                  % (path, lineno, current, field))
+                entries[current][field] = match.group(2).strip()
     return entries
 
 
@@ -64,74 +68,136 @@ def split_list(value):
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def friction_refs(value):
+    """Persona codes in a friction value; parenthesised reasons may contain commas."""
+    return split_list(re.sub(r"\([^)]*\)", "", value))
+
+
 def check_friction(personas, sources, errors):
     for code, fields in personas.items():
         value = fields.get("friction", "")
         if not value or value == "none":
             continue
-        for item in split_list(value):
-            ref = item.split("(")[0].strip()
-            if ref not in personas:
+        for ref in friction_refs(value):
+            if ref == code:
+                errors.append("%s: '%s' lists itself in friction" % (sources[code], code))
+            elif ref not in personas:
                 errors.append("%s: '%s' friction references unknown persona '%s'"
                               % (sources[code], code, ref))
+
+
+def check_members(room_id, value, personas, path, errors):
+    distinct = []
+    for member in split_list(value):
+        if member in distinct:
+            errors.append("%s: room '%s' lists member '%s' twice" % (path, room_id, member))
+            continue
+        distinct.append(member)
+        if member not in personas:
+            errors.append("%s: room '%s' has unknown member '%s'" % (path, room_id, member))
+    if not 3 <= len(distinct) <= 5:
+        errors.append("%s: room '%s' needs 3-5 members, has %d"
+                      % (path, room_id, len(distinct)))
 
 
 def check_rooms(rooms, sources, personas, errors):
     for room_id, fields in rooms.items():
         path = sources[room_id]
         if "members" in fields:
-            members = split_list(fields["members"])
-            if not 3 <= len(members) <= 5:
-                errors.append("%s: room '%s' needs 3-5 members, has %d"
-                              % (path, room_id, len(members)))
-            for member in members:
-                if member not in personas:
-                    errors.append("%s: room '%s' has unknown member '%s'"
-                                  % (path, room_id, member))
+            check_members(room_id, fields["members"], personas, path, errors)
         if "memory" in fields and fields["memory"] not in ("true", "false"):
             errors.append("%s: room '%s' memory must be true or false" % (path, room_id))
     if DEFAULT_ROOM not in rooms:
         errors.append("default room '%s' missing" % DEFAULT_ROOM)
 
 
-def check_frontmatter(path, errors):
+def unquote(value):
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+        return value[1:-1]
+    return value
+
+
+def read_frontmatter(path, errors):
+    """Return the frontmatter {key: value}, or None after recording the problem."""
     if not os.path.isfile(path):
         errors.append("missing file %s" % path)
-        return
+        return None
     with open(path, encoding="utf-8") as fh:
         lines = fh.read().split("\n")
     if not lines or lines[0].strip() != "---" or "---" not in [l.strip() for l in lines[1:]]:
         errors.append("%s: missing YAML frontmatter" % path)
-        return
+        return None
     end = [l.strip() for l in lines[1:]].index("---") + 1
     keys = {}
     for line in lines[1:end]:
         if ":" in line and not line.startswith(" "):
             key, value = line.split(":", 1)
-            keys[key.strip()] = value.strip()
+            keys[key.strip()] = unquote(value)
+    return keys
+
+
+def check_frontmatter(path, expected_name, errors):
+    keys = read_frontmatter(path, errors)
+    if keys is None:
+        return
     for key in ("name", "description"):
         if not keys.get(key):
             errors.append("%s: missing frontmatter '%s'" % (path, key))
+    if keys.get("name") and keys["name"] != expected_name:
+        errors.append("%s: frontmatter name must be '%s'" % (path, expected_name))
 
 
-def check_manifest(path, errors):
+def read_manifest(path, errors):
+    """Return the manifest dict, or None after recording why it is unusable."""
     if not os.path.isfile(path):
         errors.append("missing file %s" % path)
-        return
+        return None
     try:
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
     except ValueError as exc:
         errors.append("%s: invalid JSON (%s)" % (path, exc))
+        return None
+    if not isinstance(data, dict):
+        errors.append("%s: manifest must be a JSON object" % path)
+        return None
+    return data
+
+
+def check_version(version, path, errors):
+    if not isinstance(version, str):
+        errors.append("%s: version must be a string" % path)
+    elif version and not SEMVER_RE.match(version):
+        errors.append("%s: version '%s' is not semver (X.Y.Z)" % (path, version))
+
+
+def check_manifest(path, errors):
+    data = read_manifest(path, errors)
+    if data is None:
         return
     for key in ("name", "description", "version", "license"):
         if not data.get(key):
             errors.append("%s: missing key '%s'" % (path, key))
-    if not (data.get("author") or {}).get("name"):
+    author = data.get("author")
+    if not (isinstance(author, dict) and author.get("name")):
         errors.append("%s: missing key 'author.name'" % path)
-    version = data.get("version", "")
-    if version and not SEMVER_RE.match(version):
-        errors.append("%s: version '%s' is not semver (X.Y.Z)" % (path, version))
+    check_version(data.get("version", ""), path, errors)
+
+
+def check_party_dir(party_dir, errors):
+    if not os.path.isdir(party_dir):
+        errors.append("party dir %s not found" % party_dir)
+        return False
+    return True
+
+
+def apply_override(party_dir, filename, required, entries, sources, errors):
+    """Override entries replace base entries with the same code as a whole."""
+    extra, extra_src = load(os.path.join(party_dir, filename), required, errors,
+                            must_exist=False)
+    entries.update(extra)
+    sources.update(extra_src)
 
 
 def main(argv=None):
@@ -145,21 +211,16 @@ def main(argv=None):
     root = args.root
     refs = os.path.join(root, "skills", "party-mode", "references")
     check_manifest(os.path.join(root, ".claude-plugin", "plugin.json"), errors)
-    check_frontmatter(os.path.join(root, "skills", "party-mode", "SKILL.md"), errors)
-    check_frontmatter(os.path.join(root, "agents", "party-guest.md"), errors)
+    check_frontmatter(os.path.join(root, "skills", "party-mode", "SKILL.md"), "party-mode", errors)
+    check_frontmatter(os.path.join(root, "agents", "party-guest.md"), "party-guest", errors)
 
     personas, persona_src = load(os.path.join(refs, "personas.md"), PERSONA_FIELDS, errors)
     rooms, room_src = load(os.path.join(refs, "rooms.md"), ROOM_FIELDS, errors)
 
-    if args.party_dir:
-        extra, extra_src = load(os.path.join(args.party_dir, "personas.md"),
-                                PERSONA_FIELDS, errors, must_exist=False)
-        personas.update(extra)
-        persona_src.update(extra_src)
-        extra, extra_src = load(os.path.join(args.party_dir, "rooms.md"),
-                                ROOM_FIELDS, errors, must_exist=False)
-        rooms.update(extra)
-        room_src.update(extra_src)
+    if args.party_dir and check_party_dir(args.party_dir, errors):
+        apply_override(args.party_dir, "personas.md", PERSONA_FIELDS,
+                       personas, persona_src, errors)
+        apply_override(args.party_dir, "rooms.md", ROOM_FIELDS, rooms, room_src, errors)
 
     check_friction(personas, persona_src, errors)
     check_rooms(rooms, room_src, personas, errors)
