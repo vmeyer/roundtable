@@ -11,8 +11,8 @@ trap 'rm -rf "$tmp"' EXIT
 pass=0
 fail=0
 
-P=skills/party-mode/references/personas.md
-R=skills/party-mode/references/rooms.md
+P=skills/roundtable/references/personas.md
+R=skills/roundtable/references/rooms.md
 
 expect_ok() { # name root [extra validator args...]
     local name="$1" root="$2" out
@@ -55,8 +55,8 @@ PY
 
 expect_ok  "valid fixture" "$fixture"
 expect_err "bad semver" "$(mutant semver .claude-plugin/plugin.json '"0.1.0"' '"0.1"')" "is not semver"
-expect_err "missing skill description" "$(mutant skilldesc skills/party-mode/SKILL.md 'description: Fixture skill.' '')" "missing frontmatter 'description'"
-expect_err "missing agent description" "$(mutant agentdesc agents/party-guest.md 'description: Fixture guest.' '')" "missing frontmatter 'description'"
+expect_err "missing skill description" "$(mutant skilldesc skills/roundtable/SKILL.md 'description: Fixture skill.' '')" "missing frontmatter 'description'"
+expect_err "missing agent description" "$(mutant agentdesc agents/panelist.md 'description: Fixture guest.' '')" "missing frontmatter 'description'"
 expect_err "missing persona field" "$(mutant field $P '- signature_question: "What breaks?"' '')" "'beta' missing field 'signature_question'"
 expect_err "empty persona field" "$(mutant empty $P '- voice: Curious.' '- voice:')" "'gamma' field 'voice' is empty"
 expect_err "duplicate persona" "$(mutant dup $P '## gamma' '## alpha')" "duplicate entry 'alpha'"
@@ -68,9 +68,9 @@ expect_err "memory not boolean" "$(mutant memory $R '- memory: false' '- memory:
 expect_err "default room missing" "$(mutant default $R '## round-table' '## other-room')" "default room 'round-table' missing"
 expect_err "missing personas file" "$(mutant nofile $P '## alpha' '## alpha' >/dev/null && rm "$tmp/nofile/$P" && printf '%s' "$tmp/nofile")" "missing file"
 
-# Project overrides (--party-dir)
-mkdir -p "$tmp/party-ok" "$tmp/party-bad"
-cat > "$tmp/party-ok/personas.md" <<'MD'
+# Project overrides (--project-dir)
+mkdir -p "$tmp/proj-ok" "$tmp/proj-bad"
+cat > "$tmp/proj-ok/personas.md" <<'MD'
 ## delta
 - name: Delta
 - icon: 🔺
@@ -81,37 +81,37 @@ cat > "$tmp/party-ok/personas.md" <<'MD'
 - signature_question: "Why not now?"
 - friction: alpha
 MD
-cat > "$tmp/party-ok/rooms.md" <<'MD'
+cat > "$tmp/proj-ok/rooms.md" <<'MD'
 ## pair-room
 - name: Pair Room
 - members: alpha, beta, delta
 - memory: true
 - scene: A smaller room.
 MD
-cat > "$tmp/party-bad/personas.md" <<'MD'
+cat > "$tmp/proj-bad/personas.md" <<'MD'
 ## delta
 - name: Delta
 MD
-expect_ok  "valid project overrides" "$fixture" --party-dir "$tmp/party-ok"
-expect_err "incomplete override persona" "$fixture" "'delta' missing field 'icon'" --party-dir "$tmp/party-bad"
-expect_err "missing party dir" "$fixture" "party dir" --party-dir "$tmp/does-not-exist"
+expect_ok  "valid project overrides" "$fixture" --project-dir "$tmp/proj-ok"
+expect_err "incomplete override persona" "$fixture" "'delta' missing field 'icon'" --project-dir "$tmp/proj-bad"
+expect_err "missing project dir" "$fixture" "project dir" --project-dir "$tmp/does-not-exist"
 expect_err "duplicate room member" "$(mutant dupmember $R '- members: alpha, beta, gamma' '- members: alpha, alpha, beta')" "lists member 'alpha' twice"
 
 # Override entries replace the base entry completely (no field merging)
-mkdir -p "$tmp/party-replace" "$tmp/party-badroom"
-cat > "$tmp/party-replace/personas.md" <<'MD'
+mkdir -p "$tmp/proj-replace" "$tmp/proj-badroom"
+cat > "$tmp/proj-replace/personas.md" <<'MD'
 ## alpha
 - name: A
 MD
-cat > "$tmp/party-badroom/rooms.md" <<'MD'
+cat > "$tmp/proj-badroom/rooms.md" <<'MD'
 ## bad-room
 - name: Bad Room
 - members: alpha, beta, nobody
 - memory: false
 - scene: A room with a stranger.
 MD
-expect_err "override persona replaces base" "$fixture" "'alpha' missing field 'icon'" --party-dir "$tmp/party-replace"
-expect_err "override room unknown member" "$fixture" "room 'bad-room' has unknown member 'nobody'" --party-dir "$tmp/party-badroom"
+expect_err "override persona replaces base" "$fixture" "'alpha' missing field 'icon'" --project-dir "$tmp/proj-replace"
+expect_err "override room unknown member" "$fixture" "room 'bad-room' has unknown member 'nobody'" --project-dir "$tmp/proj-badroom"
 
 # Manifest robustness: wrong JSON types must yield errors, not tracebacks
 expect_err "non-string version" "$(mutant version .claude-plugin/plugin.json '"version": "0.1.0"' '"version": 1')" "version must be a string"
@@ -122,26 +122,26 @@ expect_err "manifest not an object" "$(mutant notobject .claude-plugin/plugin.js
 expect_ok  "friction reason with comma" "$(mutant frictioncomma $P '- friction: beta (speed vs. safety)' '- friction: beta (speed, not safety)')"
 expect_err "field set twice" "$(mutant twice $P '- friction: none' $'- friction: none\n- friction: alpha')" "sets field 'friction' twice"
 expect_err "self friction" "$(mutant selffriction $P '- friction: none' '- friction: gamma')" "lists itself in friction"
-expect_err "wrong skill name" "$(mutant skillname skills/party-mode/SKILL.md 'name: party-mode' 'name: party')" "frontmatter name must be 'party-mode'"
+expect_err "wrong skill name" "$(mutant skillname skills/roundtable/SKILL.md 'name: roundtable' 'name: round')" "frontmatter name must be 'roundtable'"
 
 # An override room with an existing code replaces the base room (override wins)
-mkdir -p "$tmp/party-room-replace"
-cat > "$tmp/party-room-replace/rooms.md" <<'MD'
+mkdir -p "$tmp/proj-room-replace"
+cat > "$tmp/proj-room-replace/rooms.md" <<'MD'
 ## round-table
 - name: Round Table
 - members: alpha, beta
 - memory: false
 - scene: Smaller.
 MD
-expect_err "override replaces existing room" "$fixture" "room 'round-table' needs 3-5 members, has 2" --party-dir "$tmp/party-room-replace"
+expect_err "override replaces existing room" "$fixture" "room 'round-table' needs 3-5 members, has 2" --project-dir "$tmp/proj-room-replace"
 
 # Member count uses distinct members only
 expect_err "distinct member count" "$(mutant distinctcount $R '- members: alpha, beta, gamma' '- members: alpha, alpha, beta')" "needs 3-5 members, has 2"
 
 # Frontmatter name checks
-expect_err "empty quoted skill name" "$(mutant emptyname skills/party-mode/SKILL.md 'name: party-mode' 'name: ""')" "missing frontmatter 'name'"
-expect_ok  "quoted agent name" "$(mutant quotedagent agents/party-guest.md 'name: party-guest' "name: 'party-guest'")"
-expect_err "wrong agent name" "$(mutant agentname agents/party-guest.md 'name: party-guest' 'name: guest')" "frontmatter name must be 'party-guest'"
+expect_err "empty quoted skill name" "$(mutant emptyname skills/roundtable/SKILL.md 'name: roundtable' 'name: ""')" "missing frontmatter 'name'"
+expect_ok  "quoted agent name" "$(mutant quotedagent agents/panelist.md 'name: panelist' "name: 'panelist'")"
+expect_err "wrong agent name" "$(mutant agentname agents/panelist.md 'name: panelist' 'name: guest')" "frontmatter name must be 'panelist'"
 
 echo "--- $pass passed, $fail failed ---"
 [ "$fail" -eq 0 ]

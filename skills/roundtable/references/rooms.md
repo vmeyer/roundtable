@@ -1,9 +1,9 @@
 # Rooms
 
 Named rooms: a cast of 3–5 personas plus a scene that shapes how the room behaves. `round-table` is the
-default. Projects can add or replace rooms in `.party/rooms.md` (same format; a replacement needs every field) —
-for example to set `memory: true` on a room they use often. Scenes mention the built-in names; if a project
-override renames a persona, the host uses the current name.
+default. Projects can add or replace rooms in `.roundtable/rooms.md` (same format; a replacement needs every
+field) — for example to set `memory: true` on a room they use often. Scenes mention the built-in names; if a
+project override renames a persona, the host uses the current name.
 
 Fields: `name`, `members` (comma-separated persona codes), `memory` (`true` or `false`), `scene`.
 

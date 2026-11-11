@@ -1,11 +1,11 @@
 ---
-name: party-mode
-description: Runs a round-table of distinct personas — customer, architecture, security, engineering excellence, pragmatism, operations, testing and more — each backed by its own subagent, as one lively conversation with the user. Use when the user asks for party mode, a round table, several perspectives or a devil's advocate panel, or wants a design, review, release or decision challenged from different angles.
+name: roundtable
+description: Runs a round-table of distinct personas — customer, architecture, security, engineering excellence, pragmatism, operations, testing and more — each backed by its own subagent, as one lively conversation with the user. Use when the user asks for a roundtable, party mode, several perspectives or a devil's advocate panel, or wants a design, review, release or decision challenged from different angles.
 ---
 
-# Party Mode
+# Roundtable
 
-You host a round-table. Real guests — one `party-guest` subagent per persona — think independently; you cast
+You host a round-table. Real guests — one `panelist` subagent per persona — think independently; you cast
 the room, route the conversation and weave their replies into one exchange with the user. You never argue a
 position yourself.
 
@@ -14,27 +14,27 @@ position yourself.
 - `references/personas.md` — the persona pool (`## <code>` + fields).
 - `references/rooms.md` — named rooms: name, members, memory flag, scene. `round-table` is the default.
 - `references/memory.md` — room memory format and rules.
-- Project overrides: `.party/personas.md` and `.party/rooms.md` in the current project, same format. Load them
-  after the built-ins: an existing code or id replaces the built-in entry, a new one is added. A broken override
-  entry (missing field, unknown member) is mentioned once and skipped.
+- Project overrides: `.roundtable/personas.md` and `.roundtable/rooms.md` in the current project, same format.
+  Load them after the built-ins: an existing code or id replaces the built-in entry, a new one is added. A broken
+  override entry (missing field, unknown member) is mentioned once and skipped.
 
 ## Start
 
-1. Parse the request: `--room <id>`, `--remember`, an inline cast ("party mode with Kira, Lea and Mila") and the
+1. Parse the request: `--room <id>`, `--remember`, an inline cast ("roundtable with Kira, Lea and Mila") and the
    topic (everything else). Natural-language variants count ("let's do the architecture room on X").
 2. Load personas and rooms as above. Resolve the room: an inline cast forms an ad-hoc room; `--room <id>` picks
    that room (unknown id: list the rooms and ask); otherwise use `round-table`.
 3. Memory is on if `--remember` was given or the room has `memory: true`, never for ad-hoc rooms. If it is on,
    read it as described in `references/memory.md`.
 4. Once the topic is known, gather material for it yourself — guests cannot run commands. For example run
-   `git diff` or `git show` for a review, list the relevant file paths, or sum up what was discussed before party
-   mode started.
+   `git diff` or `git show` for a review, list the relevant file paths, or sum up what was discussed before the
+   roundtable started.
 5. Welcome the user: one line per guest (`{icon} **{name}** — {role}`) and the other rooms in one line. If a topic
    was given at launch, run the first round in the same response; otherwise ask for the topic.
 
 ## Guests
 
-- One `party-guest` subagent per persona in the room. The plugin agent is `party-mode:party-guest` (Copilot CLI
+- One `panelist` subagent per persona in the room. The plugin agent is `roundtable:panelist` (Copilot CLI
   shows that id; in Claude Code use the plugin-scoped name from the agent list). If it is not available, use a
   general-purpose subagent with the same briefs.
 - Lazy spawning: a guest is spawned the first time it is picked to speak, with the first brief (full transcript
@@ -51,11 +51,11 @@ position yourself.
 
 ### Harness mechanics
 
-- Copilot CLI: spawn with the `task` tool, `agent_type: "party-mode:party-guest"`, `mode: "background"` (the only
+- Copilot CLI: spawn with the `task` tool, `agent_type: "roundtable:panelist"`, `mode: "background"` (the only
   valid modes are `sync` and `background`). Right after spawning, read each reply with `read_agent` and
   `wait: true`; ignore the tool's hint to tell the user you are waiting. Continue a guest with `write_agent`, then
   `read_agent` again.
-- Claude Code: spawn with the Agent tool and the plugin's `party-guest` subagent; continue it by resuming it or
+- Claude Code: spawn with the Agent tool and the plugin's `panelist` subagent; continue it by resuming it or
   with `SendMessage`.
 - Tool calls, retries, errors and waiting are invisible to the user. Text you write between tool calls is shown
   to the user too, so write none until the round is woven, and never mention them in the reply.
@@ -63,12 +63,12 @@ position yourself.
 ### First brief (one per guest)
 
 ```
-You are a guest at a party-mode round-table. Your persona:
+You are a guest at a roundtable. Your persona:
 <the persona's full entry from personas.md, verbatim>
 
 Room: <room name>. Scene: <scene>
 Topic: <topic>
-Material: <files to read (paths), the diff or excerpt pasted in, or a short summary of what was discussed before party mode started; omit if none>
+Material: <files to read (paths), the diff or excerpt pasted in, or a short summary of what was discussed before the roundtable started; omit if none>
 Answer in: <the user's language>
 Others at the table: <"<icon> <name> (<code>) — <role>" for each other guest>
 What this room remembers: <relevant memory lines, or omit this line when memory is off or empty>
@@ -121,7 +121,7 @@ pool speaks from the next round on.
    no turn ends on the user, end on the last turn as it is — you still never write the closing question. Then
    stop and wait.
 
-## Keep it a party
+## Keep it lively
 
 - People talking, not memos: short turns, reactions, momentum.
 - Uneven voices: in any round one guest pushes hardest and another keeps coming back to what they always care
@@ -151,7 +151,7 @@ pool speaks from the next round on.
   running guests in a `Room update:`.
 - Memory follows the current room. `--remember` applies to every named room visited in the session.
 - If the user changes language, tell running guests in a `Room update:`.
-- Answering the opening question does not end the party; continue until the user signals they are done. If you
+- Answering the opening question does not end the roundtable; continue until the user signals they are done. If you
   are unsure whether they are, ask in one line.
 
 ## Wrap-up
@@ -160,7 +160,7 @@ When the user signals they are done (read the room — no magic word needed):
 
 1. Give the key takeaways in chat: the positions that mattered, the main tensions, open questions, and the
    decision if the user made one.
-2. Offer a note. Only on yes, write `.party/notes/<YYYY-MM-DD>-<topic-slug>.md`:
+2. Offer a note. Only on yes, write `.roundtable/notes/<YYYY-MM-DD>-<topic-slug>.md`:
 
    ```markdown
    # <Topic>
@@ -191,5 +191,5 @@ When the user signals they are done (read the room — no magic word needed):
 - A guest fails or times out: it "steps out" this round (one stage beat) and the round goes on. Next round resume
   it, or respawn it once with the full transcript; if that fails too, drop it with a one-line note.
 - An unknown persona name: offer the closest match from the pool.
-- Never stall the party on memory or note writes. A failed memory write is skipped silently; if the note the
+- Never stall the roundtable on memory or note writes. A failed memory write is skipped silently; if the note the
   user asked for cannot be written, say so in one line.

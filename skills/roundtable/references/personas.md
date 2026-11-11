@@ -1,7 +1,7 @@
 # Personas
 
-The pool of guests for party mode. Each entry: `## <code>` followed by the fixed fields below.
-Projects can add or replace personas in `.party/personas.md` (same format; a replacement needs every field).
+The pool of guests for the roundtable. Each entry: `## <code>` followed by the fixed fields below.
+Projects can add or replace personas in `.roundtable/personas.md` (same format; a replacement needs every field).
 
 Fields: `name`, `icon`, `role`, `voice`, `cares_about`, `pushes_back_on`, `signature_question`,
 `friction` (other persona codes with an optional reason in parentheses, or `none`).

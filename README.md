@@ -1,4 +1,4 @@
-# party-mode
+# roundtable
 
 A round-table of distinct personas for GitHub Copilot CLI and Claude Code. Each persona is backed by its own
 subagent, so the voices think independently — and actually disagree — before you decide.
@@ -12,14 +12,14 @@ plugin has no dependencies beyond the plugin standard.
 
 ```bash
 copilot plugin marketplace add vmeyer/claude-plugins
-copilot plugin install party-mode@vmeyer-plugins
+copilot plugin install roundtable@vmeyer-plugins
 ```
 
 **Claude Code**
 
 ```
 /plugin marketplace add vmeyer/claude-plugins
-/plugin install party-mode@vmeyer-plugins
+/plugin install roundtable@vmeyer-plugins
 ```
 
 **copilot-sandbox:** preinstalled (`image/plugins/preinstalled-plugins.txt`).
@@ -27,14 +27,14 @@ copilot plugin install party-mode@vmeyer-plugins
 ## Use
 
 ```
-party mode — should we split the billing service?
-/party-mode --room architecture Event sourcing for orders?
-/party-mode --room release --remember Are we ready for Friday?
-party mode with Kira, Lea and Mila: the new onboarding flow
+roundtable — should we split the billing service?
+/roundtable --room architecture Event sourcing for orders?
+/roundtable --room release --remember Are we ready for Friday?
+roundtable with Kira, Lea and Mila: the new onboarding flow
 ```
 
 Mid-session: "bring in Nadia", "switch to the decision room", "dig in, Sven", "remember this room".
-Say you're done to get the takeaways and an optional note.
+Say you're done to get the takeaways and an optional note. The old phrase "party mode" still starts a roundtable.
 
 ## Personas
 
@@ -64,22 +64,22 @@ Say you're done to get the takeaways and an optional note.
 
 ## Customize per project
 
-Add `.party/personas.md` and/or `.party/rooms.md` to a project, in the same format as
-`skills/party-mode/references/personas.md` and `rooms.md`. A matching code or id replaces the built-in entry
+Add `.roundtable/personas.md` and/or `.roundtable/rooms.md` to a project, in the same format as
+`skills/roundtable/references/personas.md` and `rooms.md`. A matching code or id replaces the built-in entry
 (copy it and edit — every field is required); a new one is added. Check your overrides with:
 
 ```bash
-bash tests/validate.sh --party-dir /path/to/project/.party
+bash tests/validate.sh --project-dir /path/to/project/.roundtable
 ```
 
 ## Memory and notes
 
-- **Memory** (opt-in: `--remember` or `memory: true` on a room) lives in `.party/memory/<room>.md` — a few
+- **Memory** (opt-in: `--remember` or `memory: true` on a room) lives in `.roundtable/memory/<room>.md` — a few
   one-line entries per session so the room picks up where it left off. Delete the file to forget.
-- **Notes** (offered at wrap-up) go to `.party/notes/<date>-<topic>.md`.
+- **Notes** (offered at wrap-up) go to `.roundtable/notes/<date>-<topic>.md`.
 
-Whether `.party/` is committed is up to the project; add `.party/memory/` to `.gitignore` if it shouldn't be
-shared.
+Whether `.roundtable/` is committed is up to the project; add `.roundtable/memory/` to `.gitignore` if it
+shouldn't be shared.
 
 ## Development
 

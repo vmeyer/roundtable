@@ -6,12 +6,12 @@ transcript.
 ## When it is on
 
 - The user passed `--remember`, said "remember this room", or the room has `memory: true` (set in the project's
-  `.party/rooms.md`).
+  `.roundtable/rooms.md`).
 - Ad-hoc rooms (an inline cast) never have memory.
 
 ## File
 
-`.party/memory/<room-id>.md` in the current project. Create `.party/memory/` with the first entry.
+`.roundtable/memory/<room-id>.md` in the current project. Create `.roundtable/memory/` with the first entry.
 
     # Memory: Round Table
 
@@ -49,4 +49,4 @@ One line per entry: `- <YYYY-MM-DD> · <type> · <text>`. Types:
 ## Correct and forget
 
 - Correct: add a newer line that says what changed — the most recent line counts.
-- Forget: delete `.party/memory/<room-id>.md`, or the whole `.party/memory/` directory.
+- Forget: delete `.roundtable/memory/<room-id>.md`, or the whole `.roundtable/memory/` directory.

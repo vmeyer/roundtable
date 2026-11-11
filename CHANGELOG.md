@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 — 2026-11-11
+
+- Renamed from party-mode to roundtable. Breaking: install `roundtable@vmeyer-plugins`; agent is now
+  `roundtable:panelist`; project data moved from `.party/` to `.roundtable/` (rename the folder in existing
+  projects); `/roundtable` command; "party mode" still triggers the skill.
+- Validator: `--party-dir` is now `--project-dir` (points at a project's `.roundtable` directory).
+
 ## 0.1.2 — 2026-11-11
 
 - Skill: Copilot CLI hosts call `read_agent` with `wait: true` right after spawning and write no text between

@@ -1,5 +1,7 @@
 # Party Mode — design
 
+> Renamed to **roundtable** in v0.2.0 (agent `roundtable:panelist`, project dir `.roundtable/`).
+
 **Date:** 2026-11-11
 **Status:** Approved design, pending implementation plan
 **Repo:** `github.com/vmeyer/party-mode` (public, MIT) — distributed via the `vmeyer/claude-plugins` marketplace

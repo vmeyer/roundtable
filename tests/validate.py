@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Structural validator for the party-mode plugin. Standard library only.
+"""Structural validator for the roundtable plugin. Standard library only.
 
 Usage:
-    python3 tests/validate.py [--root PLUGIN_ROOT] [--party-dir PROJECT/.party]
+    python3 tests/validate.py [--root PLUGIN_ROOT] [--project-dir PROJECT/.roundtable]
 """
 import argparse
 import json
@@ -185,16 +185,16 @@ def check_manifest(path, errors):
     check_version(data.get("version", ""), path, errors)
 
 
-def check_party_dir(party_dir, errors):
-    if not os.path.isdir(party_dir):
-        errors.append("party dir %s not found" % party_dir)
+def check_project_dir(project_dir, errors):
+    if not os.path.isdir(project_dir):
+        errors.append("project dir %s not found" % project_dir)
         return False
     return True
 
 
-def apply_override(party_dir, filename, required, entries, sources, errors):
+def apply_override(project_dir, filename, required, entries, sources, errors):
     """Override entries replace base entries with the same code as a whole."""
-    extra, extra_src = load(os.path.join(party_dir, filename), required, errors,
+    extra, extra_src = load(os.path.join(project_dir, filename), required, errors,
                             must_exist=False)
     entries.update(extra)
     sources.update(extra_src)
@@ -202,25 +202,25 @@ def apply_override(party_dir, filename, required, entries, sources, errors):
 
 def main(argv=None):
     default_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    parser = argparse.ArgumentParser(description="Validate the party-mode plugin structure.")
+    parser = argparse.ArgumentParser(description="Validate the roundtable plugin structure.")
     parser.add_argument("--root", default=default_root, help="plugin root (default: repo root)")
-    parser.add_argument("--party-dir", help="a project's .party directory with overrides")
+    parser.add_argument("--project-dir", help="a project's .roundtable directory with overrides")
     args = parser.parse_args(argv)
 
     errors = []
     root = args.root
-    refs = os.path.join(root, "skills", "party-mode", "references")
+    refs = os.path.join(root, "skills", "roundtable", "references")
     check_manifest(os.path.join(root, ".claude-plugin", "plugin.json"), errors)
-    check_frontmatter(os.path.join(root, "skills", "party-mode", "SKILL.md"), "party-mode", errors)
-    check_frontmatter(os.path.join(root, "agents", "party-guest.md"), "party-guest", errors)
+    check_frontmatter(os.path.join(root, "skills", "roundtable", "SKILL.md"), "roundtable", errors)
+    check_frontmatter(os.path.join(root, "agents", "panelist.md"), "panelist", errors)
 
     personas, persona_src = load(os.path.join(refs, "personas.md"), PERSONA_FIELDS, errors)
     rooms, room_src = load(os.path.join(refs, "rooms.md"), ROOM_FIELDS, errors)
 
-    if args.party_dir and check_party_dir(args.party_dir, errors):
-        apply_override(args.party_dir, "personas.md", PERSONA_FIELDS,
+    if args.project_dir and check_project_dir(args.project_dir, errors):
+        apply_override(args.project_dir, "personas.md", PERSONA_FIELDS,
                        personas, persona_src, errors)
-        apply_override(args.party_dir, "rooms.md", ROOM_FIELDS, rooms, room_src, errors)
+        apply_override(args.project_dir, "rooms.md", ROOM_FIELDS, rooms, room_src, errors)
 
     check_friction(personas, persona_src, errors)
     check_rooms(rooms, room_src, personas, errors)

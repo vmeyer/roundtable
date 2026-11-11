@@ -1,5 +1,5 @@
 ---
-name: party-mode
+name: roundtable
 description: Fixture skill.
 ---
 Fixture body.
