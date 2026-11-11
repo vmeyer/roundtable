@@ -40,13 +40,24 @@ position yourself.
 - Lazy spawning: a guest is spawned the first time it is picked to speak, with the first brief (full transcript
   so far). A guest not yet spawned simply hasn't spoken.
 - Standing cast: after its first spawn, keep each guest's subagent for the whole session and send every later
-  brief as a follow-up message — in Copilot CLI start it as a background agent and continue it with follow-up
-  messages; in Claude Code resume the subagent or message it with `SendMessage`. Keep a private map from persona
-  to agent handle. Only if this harness cannot continue a subagent, spawn a fresh one each time the guest speaks,
-  with the full first brief.
+  brief as a follow-up message (see Harness mechanics). Keep a private map from persona to agent handle. Only if
+  this harness cannot continue a subagent, spawn a fresh one each time the guest speaks, with the full first
+  brief.
 - If the harness cannot spawn subagents at all, voice the personas yourself, say so once in one sentence, and
   keep every other rule, including the brief's `Rules:` line.
-- Release all guests at wrap-up; on a room switch, release the guests who leave the room.
+- Release all guests at wrap-up; on a room switch, release the guests who leave the room. Releasing a guest
+  means: send it no more messages and, where the harness offers a way to stop or close an agent, use it. Never
+  announce a release in the reply.
+
+### Harness mechanics
+
+- Copilot CLI: spawn with the `task` tool, `agent_type: "party-mode:party-guest"`, `mode: "background"` (the only
+  valid modes are `sync` and `background`). Read each reply with `read_agent`, waiting for completion. Continue a
+  guest with `write_agent`, then `read_agent` again.
+- Claude Code: spawn with the Agent tool and the plugin's `party-guest` subagent; continue it by resuming it or
+  with `SendMessage`.
+- Tool calls, retries and errors are invisible to the user. Get them right silently and never mention them in
+  the reply.
 
 ### First brief (one per guest)
 
@@ -86,17 +97,23 @@ every guest receives every turn, including rounds it sat out. Never run separate
 
 ## Each round
 
+A round has at most 4 speakers and at most one rebuttal turn.
+
 1. Read the user's turn and choose 2–4 speakers: the guests with the most at stake or the sharpest disagreement.
    Vary the spotlight across rounds; nobody speaks every round by default. A guest the user addresses by name
    always speaks.
 2. First takes: brief the chosen guests in parallel — the first brief for a guest who has not spoken yet, a
    follow-up brief for the others. In at least one brief, ask that guest to end its turn with a question or a
    choice for the user.
-3. Optional rebuttal: when two takes collide, send one guest the other's actual words and ask for a direct answer.
+3. Optional rebuttal, only when two takes actually collide: send one guest the other's actual words and ask for
+   a direct answer. If the first takes all agree, stage no rebuttal; let the closing turn put the open question
+   to the user, or next round bring in a pool guest with a different stake.
 4. Guests who sat out get the new turns in their next brief.
-5. Weave one exchange, each turn as `{icon} **{name}:** {text}`. Order the turns so a rebuttal follows what it
-   rebuts. You may add a short stage beat in italics or a connective phrase ("Lea cuts in:"), but never change
-   what a guest argued, never shorten it into a paraphrase, and never report a guest in the third person.
+5. Weave one exchange, each turn as `{icon} **{name}:** {text}`, where `{text}` is the guest's reply exactly as
+   returned: no trimming, no added words, no edits. Order the turns so a rebuttal follows what it rebuts. A
+   connective phrase ("Lea cuts in:") or stage beat goes on its own line in italics between turns, never inside
+   one. Never report a guest in the third person. If a reply is far too long, ask that guest for a shorter
+   version instead of cutting it.
 6. End the round on that guest's question or choice for the user — never write it yourself. If a rebuttal
    follows the turn that was asked to close on the user, ask the rebutting guest to close on the user instead. If
    no turn ends on the user, end on the last turn as it is — you still never write the closing question. Then
@@ -115,8 +132,9 @@ every guest receives every turn, including rounds it sat out. Never run separate
 - No summaries or takeaways unless the user asks.
 - When the room goes flat or circles, change the setup — invite a guest from the pool, say plainly where the room
   is stuck, or ask the user which way to go. Move on rather than redo a weak round.
-- Stay inside the scene: never talk about subagents, spawning or any other machinery. The only exception is the
-  one-sentence notice when you voice the guests yourself (see Guests).
+- Stay inside the scene: never talk about subagents, spawning, tool calls, retries, errors, waiting or any other
+  machinery, and never narrate what you are about to do. The only allowed meta sentence is the one-time notice
+  when no subagents are available (see Guests).
 
 ## During the session
 
@@ -164,7 +182,7 @@ When the user signals they are done (read the room — no magic word needed):
 
 3. Top up the memory of each named room that had memory on during the session, as described in
    `references/memory.md`.
-4. Release all guests and return to normal mode.
+4. Release all guests (see Guests) and return to normal mode.
 
 ## Errors
 
