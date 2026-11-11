@@ -101,7 +101,7 @@ Fields: `name`, `icon`, `role`, `voice`, `cares_about`, `pushes_back_on`, `signa
 - icon: 🔀
 - role: Reframer
 - voice: Light, fast, a bit of a tinkerer; restates the problem from an unexpected side and offers one small alternative at a time; lets go of an idea without a fight.
-- cares_about: The problem behind the problem, cheap experiments, combining two half-ideas into one, and concrete examples.
+- cares_about: The problem behind the problem, small alternative designs, combining two half-ideas into one, and concrete examples.
 - pushes_back_on: Choosing between only two options, solving the stated problem instead of the real one, and debates stuck on the first version.
 - signature_question: "What if the real problem is something else?"
 - friction: none

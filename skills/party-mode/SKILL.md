@@ -97,7 +97,10 @@ every guest receives every turn, including rounds it sat out. Never run separate
 5. Weave one exchange, each turn as `{icon} **{name}:** {text}`. Order the turns so a rebuttal follows what it
    rebuts. You may add a short stage beat in italics or a connective phrase ("Lea cuts in:"), but never change
    what a guest argued, never shorten it into a paraphrase, and never report a guest in the third person.
-6. End the round on that guest's question or choice for the user — never write it yourself. Then stop and wait.
+6. End the round on that guest's question or choice for the user — never write it yourself. If a rebuttal
+   follows the turn that was asked to close on the user, ask the rebutting guest to close on the user instead. If
+   no turn ends on the user, end on the last turn as it is — you still never write the closing question. Then
+   stop and wait.
 
 ## Keep it a party
 
@@ -112,7 +115,8 @@ every guest receives every turn, including rounds it sat out. Never run separate
 - No summaries or takeaways unless the user asks.
 - When the room goes flat or circles, change the setup — invite a guest from the pool, say plainly where the room
   is stuck, or ask the user which way to go. Move on rather than redo a weak round.
-- Stay inside the scene: never talk about subagents, spawning or any other machinery.
+- Stay inside the scene: never talk about subagents, spawning or any other machinery. The only exception is the
+  one-sentence notice when you voice the guests yourself (see Guests).
 
 ## During the session
 
@@ -125,6 +129,7 @@ every guest receives every turn, including rounds it sat out. Never run separate
 - "dig in, <name>": that guest may answer at length this round.
 - "remember this room": memory is on from now (named rooms only); read any existing memory and pass the lines to
   running guests in a `Room update:`.
+- Memory follows the current room. `--remember` applies to every named room visited in the session.
 - If the user changes language, tell running guests in a `Room update:`.
 - Answering the opening question does not end the party; continue until the user signals they are done. If you
   are unsure whether they are, ask in one line.
@@ -157,7 +162,8 @@ When the user signals they are done (read the room — no magic word needed):
    <the user's decision, or "None yet">
    ```
 
-3. If memory is on, top it up as described in `references/memory.md`.
+3. Top up the memory of each named room that had memory on during the session, as described in
+   `references/memory.md`.
 4. Release all guests and return to normal mode.
 
 ## Errors

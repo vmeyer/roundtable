@@ -18,7 +18,8 @@ usable on the host and inside copilot-sandbox, with Copilot CLI and Claude Code.
 ## Goals
 
 - A `party-mode` skill that runs a multi-persona round-table as one woven conversation with the user.
-- Every persona is backed by a **real, independent subagent** every round (one mind voicing every persona is only a fallback).
+- Each persona that speaks is backed by its own **real, independent subagent**, spawned on its first turn and kept
+  for the session (one mind voicing every persona is only a fallback).
 - Our own persona pool covering: customer focus, architecture, security, engineering excellence, pragmatism,
   operations/SRE, testing/QA, plus three conversation helpers.
 - Named rooms (curated casts + scene) per topic type; summon any pool persona by name.
@@ -84,13 +85,13 @@ code must exist. Codes are lowercase kebab-case and unique.
 |---|---|---|---|---|---|
 | `customer` | 🧭 | Kira | Customer focus | Speaks for end users and the paying client; hates features nobody asked for. "Who is better off on Monday?" | security, architect |
 | `architect` | 🏛️ | Henrik | Software architect | Boundaries, coupling, operability, long-term cost. "What's the blast radius?" | pragmatist, ops |
-| `security` | 🔐 | Nadia | Security | Names the concrete attack path; data protection/GDPR, secrets, supply chain. Never "might be insecure". | pragmatist |
+| `security` | 🔐 | Nadia | Security | Names the concrete attack path; data protection/GDPR, secrets, supply chain. Never "might be insecure". | pragmatist, customer |
 | `craft` | 🛠️ | Jonas | Engineering excellence | Tests, simplicity, honest names, review discipline — quality from the inside. "Show me the test." | pragmatist, testing |
-| `pragmatist` | ⏱️ | Mila | Pragmatist | Ship the 80 %, rank real problems vs. nits, cost of delay. The counterweight to every perfectionist. | architect, security, craft |
+| `pragmatist` | ⏱️ | Mila | Pragmatist | Counts in weeks and euros; sorts every concern into "stops the release" or "can wait"; cost of waiting, small undoable steps. "Does this change what we ship this month?" | architect, security, craft, ops |
 | `ops` | 📟 | Sven | Operations / SRE | Monitoring, runbooks, rollback, capacity, on-call. "How do we notice at 3 a.m. — and roll back?" | architect, pragmatist |
 | `testing` | 🧪 | Lea | Testing / QA | Behaviour from the outside: risk-based testing, edge cases, acceptance criteria, test data. "What happens when a user does this in the wrong order?" | craft, pragmatist |
-| `evidence` | 🔬 | Theo | Reality check | Asks for the number behind every adjective; says "we don't know yet" and proposes a cheap way to find out. "What's the number behind that?" | none (asks anyone for the numbers) |
-| `contrarian` | 🎭 | Ruth | Devil's advocate | Argues properly for the option the room just dismissed, then steps back and leaves the call with the user. | none (sides with whatever was dismissed) |
+| `evidence` | 🔬 | Theo | Reality check | Asks for the number behind every adjective; says "we don't know yet" and proposes a cheap way to find out. "What's the number behind that?" | none |
+| `contrarian` | 🎭 | Ruth | Devil's advocate | Argues properly for the option the room just dismissed, then steps back and leaves the call with the user. | none |
 | `options` | 🔀 | Pablo | Reframer | Looks for the problem behind the problem; offers one small alternative at a time and lets go without a fight. "What if the real problem is something else?" | none |
 
 The full persona text (voice, cares_about, pushes_back_on, …) is written during implementation following this table.
@@ -135,7 +136,8 @@ This is how a project adds its own personas, re-tunes a room, or turns memory on
 - Natural language: "party mode", "round table", "let's get several perspectives on this".
 - Slash form: `/party-mode [--room <id>] [--remember] [topic]`.
 - Ad hoc: naming personas ("bring in Nadia and Sven") summons them from the pool into the current room;
-  an inline list of names at start ("party mode with Kira, Lea and Mila") forms an ad-hoc room.
+  an inline list of names at start ("party mode with Kira, Lea and Mila") forms an ad-hoc room;
+  "send <name> home" releases a guest.
 - Unknown room id → show available rooms and ask.
 
 ## Round flow (orchestrator, `SKILL.md`)
@@ -151,7 +153,8 @@ This is how a project adds its own personas, re-tunes a room, or turns memory on
    hasn't spoken.
    - The cast is **standing**: reuse the same agent for that persona all session (Copilot CLI: background agent
      + follow-up messages; Claude Code: resume the subagent / `SendMessage`).
-   - Only if the harness cannot continue a subagent, spawn fresh each round with the full brief and transcript.
+   - Only if the harness cannot continue a subagent, spawn fresh each time the guest speaks, with the full brief
+     and transcript.
 4. **Brief per guest:** the persona entry, the room scene, the topic, a `Material:` line (paths to read, a pasted
    diff or excerpt, or a summary of what was discussed before party mode; omitted if none), the **whole room
    transcript so far** (every guest hears everything, including rounds it sat out), and a `Rules:` line with the
@@ -186,6 +189,7 @@ This is how a project adds its own personas, re-tunes a room, or turns memory on
 - Body: how to be a guest — become the persona given in the brief, answer only as that persona, honour the
   scene, keep the length cap, react to the transcript, disagree when the persona would, never summarise the
   room, never speak for other personas, verify anything time-sensitive via web search instead of guessing.
+  `Material:` and `Room update:` are binding context.
 - Appears in Copilot CLI as `party-mode:party-guest`; Claude Code exposes plugin agents the same way.
 
 ## Memory (`references/memory.md`)
@@ -206,7 +210,7 @@ When the user signals done:
 
 1. Read back the key takeaways in chat (positions, tensions, open points, decision if any).
 2. Offer a note: `.party/notes/<YYYY-MM-DD>-<topic-slug>.md` with room, cast, topic, positions per persona,
-   open questions, decision (if the user made one). Written only on yes.
+   open questions, decision (if the user made one). Written only on yes; if the write fails, say so in one line.
 3. If memory is on, top up `.party/memory/<room>.md`.
 4. Release standing agents; return to normal mode.
 
@@ -221,6 +225,7 @@ Whether `.party/` is committed is the project's choice (README suggests adding `
 - Override file malformed (missing field, unknown member code) → mention it once, skip the broken entry, continue
   with built-ins.
 - Unknown persona name summoned → offer the closest pool match.
+- A requested note cannot be written → report it in one line; memory write failures stay silent.
 
 ## Distribution & sandbox integration
 
@@ -253,5 +258,5 @@ Whether `.party/` is committed is the project's choice (README suggests adding `
   uses these names natively; Copilot CLI maps them to its `read`, `search` and `web` aliases and ignores unknown
   names.
 - Standing cast: both harnesses can continue a running subagent — Copilot CLI via background agents and follow-up
-  messages, Claude Code by resuming a custom subagent (`SendMessage`). Fresh-per-round spawning is only the
-  fallback.
+  messages, Claude Code by resuming a custom subagent (`SendMessage`). Spawning fresh each time a guest speaks
+  is only the fallback.

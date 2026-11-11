@@ -2,8 +2,8 @@
 
 Named rooms: a cast of 3–5 personas plus a scene that shapes how the room behaves. `round-table` is the
 default. Projects can add or replace rooms in `.party/rooms.md` (same format; a replacement needs every field) —
-for example to set `memory: true` on a room they use often. Scenes mention the built-in names; if a project override renames a persona, the host uses
-the current name.
+for example to set `memory: true` on a room they use often. Scenes mention the built-in names; if a project
+override renames a persona, the host uses the current name.
 
 Fields: `name`, `members` (comma-separated persona codes), `memory` (`true` or `false`), `scene`.
 
@@ -41,4 +41,4 @@ Fields: `name`, `members` (comma-separated persona codes), `memory` (`true` or `
 - name: Product & Customer
 - members: customer, pragmatist, architect, options
 - memory: false
-- scene: A scoping session with sticky notes everywhere. Kira tells the user story, Mila cuts it down to what ships first, Henrik flags what would be expensive to change later, and Pablo keeps proposing a smaller experiment.
+- scene: A scoping session with sticky notes everywhere. Kira tells the user story, Mila cuts it down to what ships first, Henrik flags what would be expensive to change later, and Pablo keeps reframing what the user actually needs.
