@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2 — 2026-11-11
+
+- Skill: Copilot CLI hosts call `read_agent` with `wait: true` right after spawning and write no text between
+  tool calls (that text is visible too), ignoring the task tool's "tell the user you're waiting" hint.
+- Skill: a round is the first takes plus at most one rebuttal; a pool guest joins from the next round on.
+- Skill: verbatim weaving keeps the guest's paragraph breaks.
+
 ## 0.1.1 — 2026-11-11
 
 - Skill: explicit harness mechanics — Copilot CLI spawns guests with `task` (`mode: "background"`) and continues

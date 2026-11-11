@@ -1,7 +1,7 @@
 {
   "name": "party-mode",
   "description": "Round-table of distinct personas — customer, architecture, security, engineering excellence, pragmatism, operations, testing and more — each backed by its own subagent, woven into one lively conversation. Named rooms for reviews, releases and decisions; optional per-project memory.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": {
     "name": "Volker Meyer"
   },

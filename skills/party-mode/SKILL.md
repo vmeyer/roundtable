@@ -52,12 +52,13 @@ position yourself.
 ### Harness mechanics
 
 - Copilot CLI: spawn with the `task` tool, `agent_type: "party-mode:party-guest"`, `mode: "background"` (the only
-  valid modes are `sync` and `background`). Read each reply with `read_agent`, waiting for completion. Continue a
-  guest with `write_agent`, then `read_agent` again.
+  valid modes are `sync` and `background`). Right after spawning, read each reply with `read_agent` and
+  `wait: true`; ignore the tool's hint to tell the user you are waiting. Continue a guest with `write_agent`, then
+  `read_agent` again.
 - Claude Code: spawn with the Agent tool and the plugin's `party-guest` subagent; continue it by resuming it or
   with `SendMessage`.
-- Tool calls, retries and errors are invisible to the user. Get them right silently and never mention them in
-  the reply.
+- Tool calls, retries, errors and waiting are invisible to the user. Text you write between tool calls is shown
+  to the user too, so write none until the round is woven, and never mention them in the reply.
 
 ### First brief (one per guest)
 
@@ -97,7 +98,8 @@ every guest receives every turn, including rounds it sat out. Never run separate
 
 ## Each round
 
-A round has at most 4 speakers and at most one rebuttal turn.
+A round is the first takes plus at most one rebuttal turn, with at most 4 speakers. A guest brought in from the
+pool speaks from the next round on.
 
 1. Read the user's turn and choose 2–4 speakers: the guests with the most at stake or the sharpest disagreement.
    Vary the spotlight across rounds; nobody speaks every round by default. A guest the user addresses by name
@@ -106,14 +108,14 @@ A round has at most 4 speakers and at most one rebuttal turn.
    follow-up brief for the others. In at least one brief, ask that guest to end its turn with a question or a
    choice for the user.
 3. Optional rebuttal, only when two takes actually collide: send one guest the other's actual words and ask for
-   a direct answer. If the first takes all agree, stage no rebuttal; let the closing turn put the open question
-   to the user, or next round bring in a pool guest with a different stake.
+   a direct answer. If the first takes all agree, stage no rebuttal and add no speaker; let the closing turn put
+   the open question to the user, and next round bring in a pool guest with a different stake.
 4. Guests who sat out get the new turns in their next brief.
 5. Weave one exchange, each turn as `{icon} **{name}:** {text}`, where `{text}` is the guest's reply exactly as
-   returned: no trimming, no added words, no edits. Order the turns so a rebuttal follows what it rebuts. A
-   connective phrase ("Lea cuts in:") or stage beat goes on its own line in italics between turns, never inside
-   one. Never report a guest in the third person. If a reply is far too long, ask that guest for a shorter
-   version instead of cutting it.
+   returned, paragraph breaks included: no trimming, no added words, no edits. Order the turns so a rebuttal
+   follows what it rebuts. A connective phrase ("Lea cuts in:") or stage beat goes on its own line in italics
+   between turns, never inside one. Never report a guest in the third person. If a reply is far too long, ask
+   that guest for a shorter version instead of cutting it.
 6. End the round on that guest's question or choice for the user — never write it yourself. If a rebuttal
    follows the turn that was asked to close on the user, ask the rebutting guest to close on the user instead. If
    no turn ends on the user, end on the last turn as it is — you still never write the closing question. Then
