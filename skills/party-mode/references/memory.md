@@ -31,20 +31,22 @@ One line per entry: `- <YYYY-MM-DD> · <type> · <text>`. Types:
 - At the start, and when switching into a room with memory, read the file if it exists.
 - Up to about 150 lines: read it directly. Longer: have a subagent distil it into a short "where things stand"
   brief and use that instead.
-- Pass the relevant lines to each guest in its first brief under "What this room remembers:".
+- Pass the relevant lines to each guest in its first brief under "What this room remembers:". Guests already at
+  the table when memory is read on a room switch, or turned on mid-session, get those lines in the `Room update:`
+  block of their next brief.
 - Let memory shape the room in character: resume alliances and open threads, land callbacks when they fit.
   Never announce that anything was loaded and never recite it.
 
 ## Write
 
-- After the first real exchanges: one entry on what the session is about and the opening dynamic.
-- Whenever a memorable beat lands: a shift in the room, a decision, a line worth a callback.
-- At wrap-up: the outcome and anything memorable not yet captured.
+- Once the session has found its topic: one entry saying what it is about and how the room started out.
+- When something lands that people will remember: the room shifts, a decision falls, a line is worth repeating.
+- At wrap-up: one closing entry with the result, plus anything worth keeping that has no entry yet.
 - Test every entry: would it colour a future session? If not, skip it. A handful of entries per session, never a
   recap.
 - Writes are silent: never say "noted" or "I'll remember". If a write fails, skip it silently.
 
 ## Correct and forget
 
-- Correct: append a new entry that supersedes the old one; the latest entry wins.
+- Correct: add a newer line that says what changed — the most recent line counts.
 - Forget: delete `.party/memory/<room-id>.md`, or the whole `.party/memory/` directory.

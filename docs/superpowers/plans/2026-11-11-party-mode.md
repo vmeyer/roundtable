@@ -1100,12 +1100,12 @@ Say you're done to get the takeaways and an optional note.
 | 🏛️ | Henrik | Software Architect |
 | 🔐 | Nadia | Security Engineer |
 | 🛠️ | Jonas | Engineering Excellence |
-| 🚢 | Mila | Pragmatist |
+| ⏱️ | Mila | Pragmatist |
 | 📟 | Sven | Operations / SRE |
 | 🧪 | Lea | Testing / QA |
-| 📏 | Theo | Claim Checker |
-| 🪵 | Ruth | Consensus Challenger |
-| 🃏 | Pablo | Option Generator |
+| 🔬 | Theo | Reality Check |
+| 🎭 | Ruth | Devil's Advocate |
+| 🔀 | Pablo | Reframer |
 
 ## Rooms
 

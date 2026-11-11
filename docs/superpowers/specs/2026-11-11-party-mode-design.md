@@ -18,7 +18,7 @@ usable on the host and inside copilot-sandbox, with Copilot CLI and Claude Code.
 ## Goals
 
 - A `party-mode` skill that runs a multi-persona round-table as one woven conversation with the user.
-- Every persona is backed by a **real, independent subagent** every round (no single-mind voicing as the norm).
+- Every persona is backed by a **real, independent subagent** every round (one mind voicing every persona is only a fallback).
 - Our own persona pool covering: customer focus, architecture, security, engineering excellence, pragmatism,
   operations/SRE, testing/QA, plus three conversation helpers.
 - Named rooms (curated casts + scene) per topic type; summon any pool persona by name.
@@ -82,16 +82,16 @@ code must exist. Codes are lowercase kebab-case and unique.
 
 | Code | Icon | Name | Role | Core stance / signature question | Friction |
 |---|---|---|---|---|---|
-| `customer` | 🧭 | Kira | Customer focus | Speaks for end users and the paying client; hates features nobody asked for. "Who is better off on Monday?" | architect (gold-plating) |
+| `customer` | 🧭 | Kira | Customer focus | Speaks for end users and the paying client; hates features nobody asked for. "Who is better off on Monday?" | security, architect |
 | `architect` | 🏛️ | Henrik | Software architect | Boundaries, coupling, operability, long-term cost. "What's the blast radius?" | pragmatist, ops |
 | `security` | 🔐 | Nadia | Security | Names the concrete attack path; data protection/GDPR, secrets, supply chain. Never "might be insecure". | pragmatist |
 | `craft` | 🛠️ | Jonas | Engineering excellence | Tests, simplicity, honest names, review discipline — quality from the inside. "Show me the test." | pragmatist, testing |
-| `pragmatist` | 🚢 | Mila | Pragmatist | Ship the 80 %, rank real problems vs. nits, cost of delay. The counterweight to every perfectionist. | architect, security, craft |
+| `pragmatist` | ⏱️ | Mila | Pragmatist | Ship the 80 %, rank real problems vs. nits, cost of delay. The counterweight to every perfectionist. | architect, security, craft |
 | `ops` | 📟 | Sven | Operations / SRE | Monitoring, runbooks, rollback, capacity, on-call. "How do we notice at 3 a.m. — and roll back?" | architect, pragmatist |
-| `testing` | 🧪 | Lea | Testing / QA | Behaviour from the outside: risk-based testing, edge cases, acceptance criteria, test data. "What happens if this arrives twice at once?" | craft, pragmatist |
-| `evidence` | 📏 | Theo | Claim checker | What is known vs. assumed; how confident should we be; what would change the answer. | none (challenges unsupported claims from anyone) |
-| `contrarian` | 🪵 | Ruth | Consensus challenger | Names the hidden assumption behind easy agreement, then hands the decision back to the user. | none (targets easy agreement, whoever holds it) |
-| `options` | 🃏 | Pablo | Option generator | Reframes the problem, offers alternatives, drops them fast when they don't help. | none |
+| `testing` | 🧪 | Lea | Testing / QA | Behaviour from the outside: risk-based testing, edge cases, acceptance criteria, test data. "What happens when a user does this in the wrong order?" | craft, pragmatist |
+| `evidence` | 🔬 | Theo | Reality check | Asks for the number behind every adjective; says "we don't know yet" and proposes a cheap way to find out. "What's the number behind that?" | none (asks anyone for the numbers) |
+| `contrarian` | 🎭 | Ruth | Devil's advocate | Argues properly for the option the room just dismissed, then steps back and leaves the call with the user. | none (sides with whatever was dismissed) |
+| `options` | 🔀 | Pablo | Reframer | Looks for the problem behind the problem; offers one small alternative at a time and lets go without a fight. "What if the real problem is something else?" | none |
 
 The full persona text (voice, cares_about, pushes_back_on, …) is written during implementation following this table.
 It is original text, not copied from BMAD.
@@ -143,16 +143,23 @@ This is how a project adds its own personas, re-tunes a room, or turns memory on
 1. **Load.** Read `references/personas.md` and `references/rooms.md`, then project overrides from `.party/`.
    Resolve the room (`--room`, inline cast, or `round-table`). Memory is on if `--remember` was passed or the
    room has `memory: true`; if on and `.party/memory/<room>.md` exists, read it (see Memory).
-2. **Welcome.** Show the cast (icon, name, one-line role) and mention that other rooms exist. Ask for the topic
-   unless it was given at launch.
-3. **Spawn guests.** One `party-guest` subagent per persona in the room.
+2. **Welcome.** Show the cast (icon, name, one-line role) and mention that other rooms exist. If the topic was
+   given at launch, run the first round in the same response; otherwise ask for it. The host gathers material
+   itself (e.g. `git diff` / `git show`, relevant paths), because guests cannot run commands.
+3. **Spawn guests lazily.** One `party-guest` subagent per persona in the room, spawned the first time that guest
+   is picked to speak, with the first brief and the full transcript so far. A guest not yet spawned simply
+   hasn't spoken.
    - The cast is **standing**: reuse the same agent for that persona all session (Copilot CLI: background agent
      + follow-up messages; Claude Code: resume the subagent / `SendMessage`).
    - Only if the harness cannot continue a subagent, spawn fresh each round with the full brief and transcript.
-4. **Brief per guest:** the persona entry, the room scene, the topic, the **whole room transcript so far** (every
-   guest hears everything, including rounds it sat out), and the form constraints: 1–3 sentences unless the user
-   asked for depth, react to what was just said, stay in character, speak the user's language, read files or
-   search the web when substance needs it, never write files. Substance and reasoning are not scripted.
+4. **Brief per guest:** the persona entry, the room scene, the topic, a `Material:` line (paths to read, a pasted
+   diff or excerpt, or a summary of what was discussed before party mode; omitted if none), the **whole room
+   transcript so far** (every guest hears everything, including rounds it sat out), and a `Rules:` line with the
+   form constraints (speak only as the persona, 1–3 sentences unless the user asked for depth, react to what was
+   just said, no summaries, never write files, never mention being an agent) so they hold even with a generic
+   subagent or inline voicing. Follow-up briefs carry the turns the guest has not received yet, plus an optional
+   `Room update:` block when something changed (room and scene, who joined or left, memory lines, answer
+   language). Substance and reasoning are not scripted.
 5. **Each round:** after the user's turn, pick **2–4 speakers** (vary the spotlight; not everyone every round).
    Run first takes in parallel; optionally run one sequential rebuttal pass so someone answers another's actual
    words. Weave the replies into **one** exchange, turns formatted `{icon} **{name}:**`, reordered so rebuttals
@@ -163,14 +170,14 @@ This is how a project adds its own personas, re-tunes a room, or turns memory on
 ### Party rules (written in our own words in `SKILL.md`)
 
 - Reads like people talking: short turns, reactions, momentum — not a stack of memos.
-- Every voice is unmistakable; voices are unequal; the spotlight moves.
+- Voices are uneven and recognisable without their names; the spotlight moves.
 - Real disagreement; the orchestrator does not reconcile or tie a bow. No manufactured consensus.
 - Pull the user in: personas address and challenge the user directly.
-- The collision must surface an angle no single voice would have reached.
+- Disagreement has to earn something: a point none of the guests had at the start.
 - Relationships accrue within the session (callbacks, alliances, running bits).
-- No summaries or takeaways unless asked; when the room sags, change something (new voice, name the impasse,
-  ask the user) instead of forcing it.
-- Never break the fourth wall about the mechanism ("I spawned 4 agents").
+- No summaries or takeaways unless asked; when the room goes flat or circles, change the setup (invite a guest,
+  say plainly where the room is stuck, ask the user) instead of forcing it.
+- Stay inside the scene: never talk about subagents, spawning or other machinery.
 
 ## Participant agent (`agents/party-guest.md`)
 
