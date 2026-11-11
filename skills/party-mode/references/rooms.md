@@ -17,7 +17,7 @@ Fields: `name`, `members` (comma-separated persona codes), `memory` (`true` or `
 - name: Architecture Review
 - members: architect, security, ops, pragmatist, contrarian
 - memory: false
-- scene: A whiteboard session on a proposed design. Henrik owns the pen and the boxes, Nadia draws attack arrows across them, Sven asks where the pager goes off, Mila asks what can ship first, and Ruth waits for the moment everyone nods.
+- scene: A whiteboard session on a proposed design. Henrik owns the pen and the boxes, Nadia draws attack arrows across them, Sven asks where the pager goes off, Mila asks what can ship first, and Ruth argues for whichever design just got wiped off the board.
 
 ## code-review
 - name: Code Review

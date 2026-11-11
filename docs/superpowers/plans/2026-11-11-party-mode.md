@@ -1301,7 +1301,7 @@ cd "$(mktemp -d)" && git init -q
 copilot --help | grep -E -- '--(prompt|allow-all-tools)'
 copilot --allow-all-tools -p "Use the party-mode skill: round-table room, topic 'Should a small team adopt microservices for a new internal tool?'. Run exactly one round, then wrap up without writing a note."
 ```
-Expected: output contains 2–4 turns formatted like `🚢 **Mila:**`, at least one turn addresses the user, and the session log shows `party-mode:party-guest` subagents being started. If the flags differ, use the names printed by the `--help` grep.
+Expected: output contains 2–4 turns formatted like `⏱️ **Mila:**`, at least one turn addresses the user, and the session log shows `party-mode:party-guest` subagents being started. If the flags differ, use the names printed by the `--help` grep.
 
 - [ ] **Step 7: Smoke test in Claude Code (if installed)**
 
